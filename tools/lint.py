@@ -60,7 +60,7 @@ def main() -> int:
         for path in ROOT.iterdir()
         if path.is_file() and not path.name.startswith(".")
     }
-    if visible_root_files != {"Dockerfile", "docker-compose.yml"}:
+    if visible_root_files != {"Dockerfile", "docker-compose.yml", "README.md"}:
         errors.append("Root directory must contain only Dockerfile and docker-compose.yml as visible files")
 
     for path in REQUIRED_FILES:
