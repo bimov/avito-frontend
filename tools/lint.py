@@ -18,7 +18,7 @@ REQUIRED_FILES = (
     ROOT / "tools" / "lint.py",
     ROOT / "tools" / "smoke_test.py",
     ROOT / "tests" / "test_ocr_utils.py",
-    ROOT / "docs" / "README.md",
+    ROOT / "README.md",
     ROOT / "Dockerfile",
     ROOT / "docker-compose.yml",
 )
