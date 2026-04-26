@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run linter
+        run: make -f tools/Makefile lint
+
+      - name: Run tests
+        run: make -f tools/Makefile test
+
+      - name: Build Docker image
+        run: make -f tools/Makefile build
+
+      - name: Start OCR app
+        run: docker compose up -d
+
+      - name: Run container smoke test
+        run: make -f tools/Makefile smoke
+
+      - name: Stop OCR app
+        if: always()
+        run: docker compose down

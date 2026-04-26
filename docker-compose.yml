@@ -1,0 +1,6 @@
+services:
+  ocr-app:
+    build: .
+    container_name: avito-ocr-app
+    ports:
+      - "8000:8000"

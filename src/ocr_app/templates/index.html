@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OCR Scanner</title>
+  <style>
+    :root {
+      --bg: #f4efe6;
+      --surface: rgba(255, 250, 242, 0.96);
+      --line: #d8cebf;
+      --text: #1d2438;
+      --muted: #6f7687;
+      --accent: #cb5b35;
+      --accent-dark: #9c3f21;
+      --accent-soft: #ffe5dc;
+      --ok: #176f63;
+      --ok-soft: #d8f1eb;
+      --error: #b53b32;
+      --error-soft: #ffe2de;
+      --shadow: 0 20px 42px rgba(28, 24, 18, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(203, 91, 53, 0.16), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(23, 111, 99, 0.16), transparent 28%),
+        linear-gradient(180deg, #f7f1e7 0%, #f0e7d8 100%);
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 48px 20px 64px;
+      display: grid;
+      gap: 24px;
+    }
+
+    .hero,
+    .error-banner,
+    .form-card,
+    .preview-card,
+    .table-card,
+    .status-card {
+      background: var(--surface);
+      border: 1px solid rgba(216, 206, 191, 0.92);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .hero {
+      padding: 36px 34px;
+    }
+
+    .eyebrow,
+    .section-kicker {
+      margin: 0 0 10px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-dark);
+    }
+
+    .hero h1,
+    .form-title,
+    .section-title {
+      margin: 0;
+      font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+      line-height: 0.98;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 4vw, 3.8rem);
+    }
+
+    .hero p {
+      max-width: 760px;
+      margin: 14px 0 0;
+      font-size: 18px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .error-banner {
+      padding: 22px 26px;
+      border-color: rgba(181, 59, 50, 0.28);
+      background: linear-gradient(180deg, rgba(255, 244, 242, 0.98), rgba(255, 226, 222, 0.98));
+    }
+
+    .error-title {
+      margin: 0 0 8px;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--error);
+    }
+
+    .error-message {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.55;
+      color: #7d2d26;
+    }
+
+    .form-card {
+      padding: 28px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .form-head {
+      display: grid;
+      gap: 6px;
+    }
+
+    .form-title {
+      font-size: clamp(1.9rem, 3vw, 2.5rem);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(180px, 0.7fr));
+      gap: 16px;
+      align-items: end;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label,
+    .field span {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .field small {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    input[type="file"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fffdfa;
+      color: var(--text);
+      font: inherit;
+    }
+
+    input[type="file"] {
+      padding: 12px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 22px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button--primary {
+      background: linear-gradient(135deg, var(--accent) 0%, #e58257 100%);
+      color: #fffaf5;
+      box-shadow: 0 12px 24px rgba(203, 91, 53, 0.25);
+    }
+
+    .button--ghost {
+      background: #fff6e8;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .results {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.88fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .preview-card,
+    .table-card,
+    .status-card {
+      padding: 22px;
+    }
+
+    .section-title {
+      font-size: 26px;
+    }
+
+    .section-copy {
+      margin: 10px 0 18px;
+      font-size: 15px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .preview-frame {
+      overflow: hidden;
+      border-radius: 22px;
+      border: 1px solid rgba(216, 206, 191, 0.92);
+      background: #efe6d8;
+    }
+
+    .preview-frame img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .table-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .table-head p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid rgba(216, 206, 191, 0.92);
+      border-radius: 20px;
+      background: #fffdfa;
+    }
+
+    table {
+      width: 100%;
+      min-width: 460px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(216, 206, 191, 0.92);
+      text-align: left;
+    }
+
+    thead th {
+      background: #f2e5cd;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent-dark);
+    }
+
+    tbody tr:nth-child(even) td {
+      background: rgba(255, 244, 228, 0.72);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .fragment {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
+      border-radius: 12px;
+      border: 1px dashed #d8a33e;
+      background: #fff2d8;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+    }
+
+    .score {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--ok-soft);
+      color: var(--ok);
+      font-weight: 800;
+    }
+
+    .status-card {
+      border-color: rgba(23, 111, 99, 0.24);
+      background: linear-gradient(180deg, rgba(244, 255, 251, 0.98), rgba(216, 241, 235, 0.98));
+    }
+
+    .status-card p {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #165d53;
+    }
+
+    @media (max-width: 980px) {
+      .form-grid,
+      .results {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 32px 14px 48px;
+      }
+
+      .hero,
+      .error-banner,
+      .form-card,
+      .preview-card,
+      .table-card,
+      .status-card {
+        border-radius: 22px;
+      }
+
+      .hero {
+        padding: 28px 24px;
+      }
+
+      .hero p {
+        font-size: 16px;
+      }
+
+      .form-card {
+        padding: 22px;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      .button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    {% if show_heading %}
+      <section class="hero">
+        <p class="eyebrow">OCR</p>
+        <h1>Распознавание текста на изображении</h1>
+        <p>Загрузите изображение, чтобы получить разметку и таблицу распознанных слов.</p>
+      </section>
+    {% endif %}
+
+    {% if error_title %}
+      <section class="error-banner" role="alert" aria-live="assertive">
+        <h2 class="error-title"><strong>{{ error_title }}</strong></h2>
+        <p class="error-message">{{ error_message }}</p>
+      </section>
+    {% endif %}
+
+    <form class="form-card" method="post" enctype="multipart/form-data">
+      <div class="form-head">
+        <p class="section-kicker">Загрузка</p>
+        <h2 class="form-title">Проверить изображение</h2>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="image">Изображение</label>
+          <input id="image" name="image" type="file" accept=".jpg,.jpeg,.png,.webp" required />
+          <small>JPG, JPEG, PNG, WEBP</small>
+        </div>
+
+        <div class="field">
+          <label for="threshold">Минимальный порог</label>
+          <input
+            id="threshold"
+            name="threshold"
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            value="{{ threshold }}"
+          />
+        </div>
+
+        <div class="field">
+          <label for="sort">Сортировка</label>
+          <select id="sort" name="sort">
+            <option value="confidence-desc" {% if sort_option == "confidence-desc" %}selected{% endif %}>Точность: выше к ниже</option>
+            <option value="confidence-asc" {% if sort_option == "confidence-asc" %}selected{% endif %}>Точность: ниже к выше</option>
+            <option value="word-asc" {% if sort_option == "word-asc" %}selected{% endif %}>Слово: А-Я</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="button button--primary" type="submit">Распознать</button>
+        <button class="button button--ghost" type="reset">Сбросить</button>
+      </div>
+    </form>
+
+    {% if result_image %}
+      <section class="results">
+        <article class="preview-card">
+          <p class="section-kicker">Результат</p>
+          <h2 class="section-title">Изображение с полигонами</h2>
+          <p class="section-copy">Найденные области текста отмечены поверх исходного изображения.</p>
+          <div class="preview-frame">
+            <img src="{{ result_image }}" alt="Результат распознавания с полигонами" />
+          </div>
+        </article>
+
+        {% if words %}
+          <section class="table-card">
+            <div class="table-head">
+              <div>
+                <p class="section-kicker">Таблица</p>
+                <h2 class="section-title">Распознанные слова</h2>
+              </div>
+              <p>Найдено: {{ words|length }}</p>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Фрагмент</th>
+                    <th scope="col">Слово</th>
+                    <th scope="col">Точность</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for word in words %}
+                    <tr>
+                      <td><span class="fragment">{{ word.fragment }}</span></td>
+                      <td>{{ word.text }}</td>
+                      <td><span class="score">{{ "%.2f"|format(word.confidence) }}</span></td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    {% if status_message %}
+      <section class="status-card" aria-live="polite">
+        <p>{{ status_message }}</p>
+      </section>
+    {% endif %}
+  </main>
+</body>
+</html>
